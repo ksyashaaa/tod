@@ -1,0 +1,1172 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "I4MiiVzqrcac"
+      },
+      "source": [
+        "# Введение в обработку текста на естественном языке"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "UpyW893Yrcag"
+      },
+      "source": [
+        "## Лабораторная работа 7"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import numpy as np \n",
+        "import pandas as pd\n",
+        "import nltk\n",
+        "from nltk import word_tokenize\n",
+        "nltk.download('punkt')"
+      ],
+      "metadata": {
+        "id": "VRU6air2tNhJ"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "93k3GNW4rcah"
+      },
+      "source": [
+        "### Расстояние редактирования"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "q1FuZ3Xvrcah"
+      },
+      "source": [
+        "1.1 Загрузите предобработанные описания рецептов из файла `preprocessed_descriptions.csv`. Получите набор уникальных слов `words`, содержащихся в текстах описаний рецептов (воспользуйтесь `word_tokenize` из `nltk`). "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "pdc = pd.read_csv(\"preprocessed_descriptions.csv\")\n",
+        "w = set()\n",
+        "for k in range(len(pdc)):\n",
+        "  unq = []\n",
+        "  if type(pdc.preprocessed_descriptions[k]) == str:\n",
+        "    unq.append(word_tokenize(pdc.preprocessed_descriptions[k]))\n",
+        "  for k1 in range(len(unq)):\n",
+        "    w.update(unq[k1])\n",
+        "w = list(w)\n",
+        "w[:10]"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Wlhi3ZF_r1dX",
+        "outputId": "4793df45-afc6-4541-8581-5526769e74d3"
+      },
+      "execution_count": 10,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "['lhasa',\n",
+              " 'ubea',\n",
+              " 'crispier',\n",
+              " 'inyou',\n",
+              " 'welldoubling',\n",
+              " 'lesssweet',\n",
+              " 'custer',\n",
+              " 'quirk',\n",
+              " 'betterleave',\n",
+              " 'bothwhatever']"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 10
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ccT9PdN4rcah"
+      },
+      "source": [
+        "1.2 Сгенерируйте 5 пар случайно выбранных слов и посчитайте между ними расстояние редактирования."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "ws=w\n",
+        "for k in range(5):\n",
+        "    tw = np.random.randint(low=0, high=len(ws), size=(2))\n",
+        "    print(f'{ws[tw[0]]}, {ws[tw[1]]} => расстояние редактирования: {nltk.edit_distance(ws[tw[0]], ws[tw[1]], substitution_cost=1)}')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "vjuDSl4fr3qw",
+        "outputId": "11ba8f39-2657-4ee9-f8a0-479df91f72e5"
+      },
+      "execution_count": 21,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "crunches, 261095 => расстояние редактирования: 8\n",
+            "phila, ranked => расстояние редактирования: 6\n",
+            "rowes, limelemon => расстояние редактирования: 8\n",
+            "dieti, sturgeons => расстояние редактирования: 8\n",
+            "hungriest, yuckky => расстояние редактирования: 8\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "tUlZuoYwrcah"
+      },
+      "source": [
+        "1.3 Напишите функцию, которая для заданного слова `word` возвращает `k` ближайших к нему слов из списка `words` (близость слов измеряется с помощью расстояния Левенштейна)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def dist(word,k,w):\n",
+        "  li = list()\n",
+        "  for j in w:\n",
+        "    li.append(tuple([nltk.edit_distance(word,j),j]))\n",
+        "  li.sort(key = lambda x: x[0])\n",
+        "  res = list()\n",
+        "  for j in li[:k]:\n",
+        "    res.append(j[1])\n",
+        "  return res\n",
+        "\n",
+        "dist(\"coole\", 5, w)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "GkA1qNPur4Wn",
+        "outputId": "f7baf7c4-0889-450d-81e5-451347f2bce1"
+      },
+      "execution_count": 30,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "['cools', 'cool', 'cooled', 'cooler', 'cole']"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 30
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "vZvI-P_Brcah"
+      },
+      "source": [
+        "### Стемминг, лемматизация"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "HdOjMDIHrcah"
+      },
+      "source": [
+        "2.1 На основе результатов 1.1 создайте `pd.DataFrame` со столбцами: \n",
+        "    * word\n",
+        "    * stemmed_word \n",
+        "    * normalized_word \n",
+        "\n",
+        "Столбец `word` укажите в качестве индекса. \n",
+        "\n",
+        "Для стемминга воспользуйтесь `SnowballStemmer`, для нормализации слов - `WordNetLemmatizer`. Сравните результаты стемминга и лемматизации."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "nltk.download('wordnet')"
+      ],
+      "metadata": {
+        "id": "fzivxpFI1Mly"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from nltk.stem import SnowballStemmer\n",
+        "from nltk.stem import WordNetLemmatizer "
+      ],
+      "metadata": {
+        "id": "ISRWNeyV1iKQ"
+      },
+      "execution_count": 32,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "wordnet_lemmatizer = WordNetLemmatizer()\n",
+        "w1=pd.DataFrame(w)\n",
+        "w1.columns = ['word']\n",
+        "snb = SnowballStemmer('english')\n",
+        "w1['stemmed_word']=w1['word'].apply(lambda x: [snb.stem(x)])\n",
+        "w1['normalized_word']=w1['word'].apply(lambda x: [wordnet_lemmatizer.lemmatize(x)])\n",
+        "w1.head(10)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 363
+        },
+        "id": "7VRTnIgX1T_o",
+        "outputId": "d297585c-2223-4e46-a3ba-e48e9e1c9d36"
+      },
+      "execution_count": 34,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "           word  stemmed_word normalized_word\n",
+              "0         lhasa       [lhasa]         [lhasa]\n",
+              "1          ubea        [ubea]          [ubea]\n",
+              "2      crispier    [crispier]      [crispier]\n",
+              "3         inyou       [inyou]         [inyou]\n",
+              "4  welldoubling   [welldoubl]  [welldoubling]\n",
+              "5     lesssweet   [lesssweet]     [lesssweet]\n",
+              "6        custer      [custer]        [custer]\n",
+              "7         quirk       [quirk]         [quirk]\n",
+              "8   betterleave  [betterleav]   [betterleave]\n",
+              "9  bothwhatever  [bothwhatev]  [bothwhatever]"
+            ],
+            "text/html": [
+              "\n",
+              "  <div id=\"df-97505b4f-3f1b-4e67-bb2d-670830aac253\">\n",
+              "    <div class=\"colab-df-container\">\n",
+              "      <div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>word</th>\n",
+              "      <th>stemmed_word</th>\n",
+              "      <th>normalized_word</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>lhasa</td>\n",
+              "      <td>[lhasa]</td>\n",
+              "      <td>[lhasa]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>ubea</td>\n",
+              "      <td>[ubea]</td>\n",
+              "      <td>[ubea]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>crispier</td>\n",
+              "      <td>[crispier]</td>\n",
+              "      <td>[crispier]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>inyou</td>\n",
+              "      <td>[inyou]</td>\n",
+              "      <td>[inyou]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>welldoubling</td>\n",
+              "      <td>[welldoubl]</td>\n",
+              "      <td>[welldoubling]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>5</th>\n",
+              "      <td>lesssweet</td>\n",
+              "      <td>[lesssweet]</td>\n",
+              "      <td>[lesssweet]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>6</th>\n",
+              "      <td>custer</td>\n",
+              "      <td>[custer]</td>\n",
+              "      <td>[custer]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>7</th>\n",
+              "      <td>quirk</td>\n",
+              "      <td>[quirk]</td>\n",
+              "      <td>[quirk]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>8</th>\n",
+              "      <td>betterleave</td>\n",
+              "      <td>[betterleav]</td>\n",
+              "      <td>[betterleave]</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>9</th>\n",
+              "      <td>bothwhatever</td>\n",
+              "      <td>[bothwhatev]</td>\n",
+              "      <td>[bothwhatever]</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>\n",
+              "      <button class=\"colab-df-convert\" onclick=\"convertToInteractive('df-97505b4f-3f1b-4e67-bb2d-670830aac253')\"\n",
+              "              title=\"Convert this dataframe to an interactive table.\"\n",
+              "              style=\"display:none;\">\n",
+              "        \n",
+              "  <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\"viewBox=\"0 0 24 24\"\n",
+              "       width=\"24px\">\n",
+              "    <path d=\"M0 0h24v24H0V0z\" fill=\"none\"/>\n",
+              "    <path d=\"M18.56 5.44l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94zm-11 1L8.5 8.5l.94-2.06 2.06-.94-2.06-.94L8.5 2.5l-.94 2.06-2.06.94zm10 10l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94z\"/><path d=\"M17.41 7.96l-1.37-1.37c-.4-.4-.92-.59-1.43-.59-.52 0-1.04.2-1.43.59L10.3 9.45l-7.72 7.72c-.78.78-.78 2.05 0 2.83L4 21.41c.39.39.9.59 1.41.59.51 0 1.02-.2 1.41-.59l7.78-7.78 2.81-2.81c.8-.78.8-2.07 0-2.86zM5.41 20L4 18.59l7.72-7.72 1.47 1.35L5.41 20z\"/>\n",
+              "  </svg>\n",
+              "      </button>\n",
+              "      \n",
+              "  <style>\n",
+              "    .colab-df-container {\n",
+              "      display:flex;\n",
+              "      flex-wrap:wrap;\n",
+              "      gap: 12px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert {\n",
+              "      background-color: #E8F0FE;\n",
+              "      border: none;\n",
+              "      border-radius: 50%;\n",
+              "      cursor: pointer;\n",
+              "      display: none;\n",
+              "      fill: #1967D2;\n",
+              "      height: 32px;\n",
+              "      padding: 0 0 0 0;\n",
+              "      width: 32px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert:hover {\n",
+              "      background-color: #E2EBFA;\n",
+              "      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);\n",
+              "      fill: #174EA6;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert {\n",
+              "      background-color: #3B4455;\n",
+              "      fill: #D2E3FC;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert:hover {\n",
+              "      background-color: #434B5C;\n",
+              "      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);\n",
+              "      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));\n",
+              "      fill: #FFFFFF;\n",
+              "    }\n",
+              "  </style>\n",
+              "\n",
+              "      <script>\n",
+              "        const buttonEl =\n",
+              "          document.querySelector('#df-97505b4f-3f1b-4e67-bb2d-670830aac253 button.colab-df-convert');\n",
+              "        buttonEl.style.display =\n",
+              "          google.colab.kernel.accessAllowed ? 'block' : 'none';\n",
+              "\n",
+              "        async function convertToInteractive(key) {\n",
+              "          const element = document.querySelector('#df-97505b4f-3f1b-4e67-bb2d-670830aac253');\n",
+              "          const dataTable =\n",
+              "            await google.colab.kernel.invokeFunction('convertToInteractive',\n",
+              "                                                     [key], {});\n",
+              "          if (!dataTable) return;\n",
+              "\n",
+              "          const docLinkHtml = 'Like what you see? Visit the ' +\n",
+              "            '<a target=\"_blank\" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'\n",
+              "            + ' to learn more about interactive tables.';\n",
+              "          element.innerHTML = '';\n",
+              "          dataTable['output_type'] = 'display_data';\n",
+              "          await google.colab.output.renderOutput(dataTable, element);\n",
+              "          const docLink = document.createElement('div');\n",
+              "          docLink.innerHTML = docLinkHtml;\n",
+              "          element.appendChild(docLink);\n",
+              "        }\n",
+              "      </script>\n",
+              "    </div>\n",
+              "  </div>\n",
+              "  "
+            ]
+          },
+          "metadata": {},
+          "execution_count": 34
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "vZH_Yr1drcai"
+      },
+      "source": [
+        "2.2. Удалите стоп-слова из описаний рецептов. Какую долю об общего количества слов составляли стоп-слова? Сравните топ-10 самых часто употребляемых слов до и после удаления стоп-слов."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "nltk.download('stopwords')"
+      ],
+      "metadata": {
+        "id": "kVDWrsjk3ltq"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 50,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "-F5SRyT-rcaj",
+        "outputId": "a41b0671-fe47-40f1-e45b-ca7e78db18fe"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "1069885\n",
+            "581520\n",
+            "доля стоп-слов: ~0.45646\n",
+            "топ-10 самых часто употребляемых слов до удаления стоп-слов: [('the', 40072), ('a', 34951), ('and', 30245), ('this', 26859), ('i', 24836), ('to', 23471), ('is', 20285), ('it', 19756), ('of', 18364), ('for', 15939)]\n",
+            "топ-10 самых часто употребляемых слов после удаления стоп-слов: [('recipe', 14871), ('make', 6326), ('time', 5137), ('use', 4620), ('great', 4430), ('like', 4167), ('easy', 4152), ('one', 3872), ('made', 3810), ('good', 3791)]\n"
+          ]
+        }
+      ],
+      "source": [
+        "from nltk.corpus import stopwords\n",
+        "wnu = []\n",
+        "for txt in pdc[\"preprocessed_descriptions\"]:\n",
+        "    wnu.extend(nltk.word_tokenize(str(txt)))\n",
+        "\n",
+        "print(len(wnu))\n",
+        "\n",
+        "stw = stopwords.words(\"english\")\n",
+        "w_sw = [k for k in wnu if not k in stw]\n",
+        "\n",
+        "print(len(w_sw))\n",
+        "\n",
+        "from collections import Counter\n",
+        "print(f\"доля стоп-слов: ~{round((len(wnu)-len(w_sw))/len(wnu), 5)}\")\n",
+        "allw = Counter(wnu).most_common(10)\n",
+        "w_stop = Counter(w_sw).most_common(10)\n",
+        "print(\"топ-10 самых часто употребляемых слов до удаления стоп-слов:\", (allw))\n",
+        "print(\"топ-10 самых часто употребляемых слов после удаления стоп-слов:\", (w_stop))"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Z0zxdP_wrcai"
+      },
+      "source": [
+        "### Векторное представление текста"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "BZFiSKMrrcai"
+      },
+      "source": [
+        "3.1 Выберите случайным образом 5 рецептов из набора данных. Представьте описание каждого рецепта в виде числового вектора при помощи `TfidfVectorizer`"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.feature_extraction.text import TfidfVectorizer\n",
+        "vector = TfidfVectorizer()\n",
+        "w2 = pd.read_csv(\"recipes_sample.csv\")\n",
+        "sample = w2.sample(5)\n",
+        "ft = pd.DataFrame(vector.fit_transform(sample.description).toarray(), columns=vector.vocabulary_, index=sample.name)\n",
+        "ft"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 678
+        },
+        "id": "PWKUP4bm9GKB",
+        "outputId": "f12f597d-1877-49a2-e533-759166f411c9"
+      },
+      "execution_count": 55,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "                                                       royal  canadian  \\\n",
+              "name                                                                     \n",
+              "sour cream biscuits                                 0.160459  0.160459   \n",
+              "whipped sweet potatoes and bananas with honey       0.000000  0.000000   \n",
+              "cuban roast pork                                    0.000000  0.000000   \n",
+              "roasted chestnut coffee                             0.000000  0.000000   \n",
+              "potato salad with green onion and mustard  rasp...  0.000000  0.000000   \n",
+              "\n",
+              "                                                      legion    ladies  \\\n",
+              "name                                                                     \n",
+              "sour cream biscuits                                 0.000000  0.000000   \n",
+              "whipped sweet potatoes and bananas with honey       0.000000  0.000000   \n",
+              "cuban roast pork                                    0.000000  0.126311   \n",
+              "roasted chestnut coffee                             0.282698  0.000000   \n",
+              "potato salad with green onion and mustard  rasp...  0.000000  0.000000   \n",
+              "\n",
+              "                                                    auxiliary  cookbook  \\\n",
+              "name                                                                      \n",
+              "sour cream biscuits                                  0.000000  0.160459   \n",
+              "whipped sweet potatoes and bananas with honey        0.100281  0.000000   \n",
+              "cuban roast pork                                     0.000000  0.000000   \n",
+              "roasted chestnut coffee                              0.000000  0.000000   \n",
+              "potato salad with green onion and mustard  rasp...   0.000000  0.000000   \n",
+              "\n",
+              "                                                      recipe   biscuit  \\\n",
+              "name                                                                     \n",
+              "sour cream biscuits                                 0.076460  0.160459   \n",
+              "whipped sweet potatoes and bananas with honey       0.047784  0.000000   \n",
+              "cuban roast pork                                    0.060188  0.000000   \n",
+              "roasted chestnut coffee                             0.134707  0.000000   \n",
+              "potato salad with green onion and mustard  rasp...  0.091008  0.000000   \n",
+              "\n",
+              "                                                        more      like  ...  \\\n",
+              "name                                                                    ...   \n",
+              "sour cream biscuits                                 0.160459  0.000000  ...   \n",
+              "whipped sweet potatoes and bananas with honey       0.000000  0.100281  ...   \n",
+              "cuban roast pork                                    0.000000  0.000000  ...   \n",
+              "roasted chestnut coffee                             0.000000  0.000000  ...   \n",
+              "potato salad with green onion and mustard  rasp...  0.000000  0.000000  ...   \n",
+              "\n",
+              "                                                    barbequed   chicken  \\\n",
+              "name                                                                      \n",
+              "sour cream biscuits                                  0.000000  0.000000   \n",
+              "whipped sweet potatoes and bananas with honey        0.100281  0.000000   \n",
+              "cuban roast pork                                     0.000000  0.126311   \n",
+              "roasted chestnut coffee                              0.000000  0.000000   \n",
+              "potato salad with green onion and mustard  rasp...   0.000000  0.000000   \n",
+              "\n",
+              "                                                        ribs   learned  \\\n",
+              "name                                                                     \n",
+              "sour cream biscuits                                 0.107461  0.000000   \n",
+              "whipped sweet potatoes and bananas with honey       0.000000  0.100281   \n",
+              "cuban roast pork                                    0.084592  0.000000   \n",
+              "roasted chestnut coffee                             0.000000  0.000000   \n",
+              "potato salad with green onion and mustard  rasp...  0.127909  0.000000   \n",
+              "\n",
+              "                                                     cooking     class  \\\n",
+              "name                                                                     \n",
+              "sour cream biscuits                                 0.000000  0.000000   \n",
+              "whipped sweet potatoes and bananas with honey       0.000000  0.000000   \n",
+              "cuban roast pork                                    0.126311  0.000000   \n",
+              "roasted chestnut coffee                             0.000000  0.282698   \n",
+              "potato salad with green onion and mustard  rasp...  0.000000  0.000000   \n",
+              "\n",
+              "                                                      taught      chef  \\\n",
+              "name                                                                     \n",
+              "sour cream biscuits                                 0.160459  0.107461   \n",
+              "whipped sweet potatoes and bananas with honey       0.000000  0.067159   \n",
+              "cuban roast pork                                    0.000000  0.084592   \n",
+              "roasted chestnut coffee                             0.000000  0.000000   \n",
+              "potato salad with green onion and mustard  rasp...  0.000000  0.000000   \n",
+              "\n",
+              "                                                         dee    biller  \n",
+              "name                                                                    \n",
+              "sour cream biscuits                                 0.000000  0.000000  \n",
+              "whipped sweet potatoes and bananas with honey       0.100281  0.000000  \n",
+              "cuban roast pork                                    0.000000  0.126311  \n",
+              "roasted chestnut coffee                             0.000000  0.000000  \n",
+              "potato salad with green onion and mustard  rasp...  0.000000  0.000000  \n",
+              "\n",
+              "[5 rows x 152 columns]"
+            ],
+            "text/html": [
+              "\n",
+              "  <div id=\"df-dc9b678b-6a4e-4122-898b-057fe393725d\">\n",
+              "    <div class=\"colab-df-container\">\n",
+              "      <div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>royal</th>\n",
+              "      <th>canadian</th>\n",
+              "      <th>legion</th>\n",
+              "      <th>ladies</th>\n",
+              "      <th>auxiliary</th>\n",
+              "      <th>cookbook</th>\n",
+              "      <th>recipe</th>\n",
+              "      <th>biscuit</th>\n",
+              "      <th>more</th>\n",
+              "      <th>like</th>\n",
+              "      <th>...</th>\n",
+              "      <th>barbequed</th>\n",
+              "      <th>chicken</th>\n",
+              "      <th>ribs</th>\n",
+              "      <th>learned</th>\n",
+              "      <th>cooking</th>\n",
+              "      <th>class</th>\n",
+              "      <th>taught</th>\n",
+              "      <th>chef</th>\n",
+              "      <th>dee</th>\n",
+              "      <th>biller</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>name</th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>sour cream biscuits</th>\n",
+              "      <td>0.160459</td>\n",
+              "      <td>0.160459</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.160459</td>\n",
+              "      <td>0.076460</td>\n",
+              "      <td>0.160459</td>\n",
+              "      <td>0.160459</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>...</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.107461</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.160459</td>\n",
+              "      <td>0.107461</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>whipped sweet potatoes and bananas with honey</th>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.100281</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.047784</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.100281</td>\n",
+              "      <td>...</td>\n",
+              "      <td>0.100281</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.100281</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.067159</td>\n",
+              "      <td>0.100281</td>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>cuban roast pork</th>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.126311</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.060188</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>...</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.126311</td>\n",
+              "      <td>0.084592</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.126311</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.084592</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.126311</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>roasted chestnut coffee</th>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.282698</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.134707</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>...</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.282698</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>potato salad with green onion and mustard  raspberry vinaigrett</th>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.091008</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>...</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.127909</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>5 rows × 152 columns</p>\n",
+              "</div>\n",
+              "      <button class=\"colab-df-convert\" onclick=\"convertToInteractive('df-dc9b678b-6a4e-4122-898b-057fe393725d')\"\n",
+              "              title=\"Convert this dataframe to an interactive table.\"\n",
+              "              style=\"display:none;\">\n",
+              "        \n",
+              "  <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\"viewBox=\"0 0 24 24\"\n",
+              "       width=\"24px\">\n",
+              "    <path d=\"M0 0h24v24H0V0z\" fill=\"none\"/>\n",
+              "    <path d=\"M18.56 5.44l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94zm-11 1L8.5 8.5l.94-2.06 2.06-.94-2.06-.94L8.5 2.5l-.94 2.06-2.06.94zm10 10l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94z\"/><path d=\"M17.41 7.96l-1.37-1.37c-.4-.4-.92-.59-1.43-.59-.52 0-1.04.2-1.43.59L10.3 9.45l-7.72 7.72c-.78.78-.78 2.05 0 2.83L4 21.41c.39.39.9.59 1.41.59.51 0 1.02-.2 1.41-.59l7.78-7.78 2.81-2.81c.8-.78.8-2.07 0-2.86zM5.41 20L4 18.59l7.72-7.72 1.47 1.35L5.41 20z\"/>\n",
+              "  </svg>\n",
+              "      </button>\n",
+              "      \n",
+              "  <style>\n",
+              "    .colab-df-container {\n",
+              "      display:flex;\n",
+              "      flex-wrap:wrap;\n",
+              "      gap: 12px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert {\n",
+              "      background-color: #E8F0FE;\n",
+              "      border: none;\n",
+              "      border-radius: 50%;\n",
+              "      cursor: pointer;\n",
+              "      display: none;\n",
+              "      fill: #1967D2;\n",
+              "      height: 32px;\n",
+              "      padding: 0 0 0 0;\n",
+              "      width: 32px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert:hover {\n",
+              "      background-color: #E2EBFA;\n",
+              "      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);\n",
+              "      fill: #174EA6;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert {\n",
+              "      background-color: #3B4455;\n",
+              "      fill: #D2E3FC;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert:hover {\n",
+              "      background-color: #434B5C;\n",
+              "      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);\n",
+              "      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));\n",
+              "      fill: #FFFFFF;\n",
+              "    }\n",
+              "  </style>\n",
+              "\n",
+              "      <script>\n",
+              "        const buttonEl =\n",
+              "          document.querySelector('#df-dc9b678b-6a4e-4122-898b-057fe393725d button.colab-df-convert');\n",
+              "        buttonEl.style.display =\n",
+              "          google.colab.kernel.accessAllowed ? 'block' : 'none';\n",
+              "\n",
+              "        async function convertToInteractive(key) {\n",
+              "          const element = document.querySelector('#df-dc9b678b-6a4e-4122-898b-057fe393725d');\n",
+              "          const dataTable =\n",
+              "            await google.colab.kernel.invokeFunction('convertToInteractive',\n",
+              "                                                     [key], {});\n",
+              "          if (!dataTable) return;\n",
+              "\n",
+              "          const docLinkHtml = 'Like what you see? Visit the ' +\n",
+              "            '<a target=\"_blank\" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'\n",
+              "            + ' to learn more about interactive tables.';\n",
+              "          element.innerHTML = '';\n",
+              "          dataTable['output_type'] = 'display_data';\n",
+              "          await google.colab.output.renderOutput(dataTable, element);\n",
+              "          const docLink = document.createElement('div');\n",
+              "          docLink.innerHTML = docLinkHtml;\n",
+              "          element.appendChild(docLink);\n",
+              "        }\n",
+              "      </script>\n",
+              "    </div>\n",
+              "  </div>\n",
+              "  "
+            ]
+          },
+          "metadata": {},
+          "execution_count": 55
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "kwNYYotHrcai"
+      },
+      "source": [
+        "3.2 Вычислите близость между каждой парой рецептов, выбранных в задании 3.1, используя косинусное расстояние (`scipy.spatial.distance.cosine`) Результаты оформите в виде таблицы `pd.DataFrame`. В качестве названий строк и столбцов используйте названия рецептов."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "dist = pd.DataFrame()\n",
+        "for i in ft.iterrows():\n",
+        "    for j in ft.iterrows():\n",
+        "        dist.loc[i[0], j[0]] = cosine(i[1].values, j[1].values)\n",
+        "dist"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 302
+        },
+        "id": "Pm5MfXqVCWFE",
+        "outputId": "83d09ce7-b5e2-4cf4-be80-60325b624262"
+      },
+      "execution_count": 70,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "                                                    sour cream biscuits  \\\n",
+              "sour cream biscuits                                            0.000000   \n",
+              "whipped sweet potatoes and bananas with honey                  0.943274   \n",
+              "cuban roast pork                                               0.932978   \n",
+              "roasted chestnut coffee                                        0.975303   \n",
+              "potato salad with green onion and mustard  rasp...             0.929673   \n",
+              "\n",
+              "                                                    whipped sweet potatoes and bananas with honey  \\\n",
+              "sour cream biscuits                                                                      0.943274   \n",
+              "whipped sweet potatoes and bananas with honey                                            0.000000   \n",
+              "cuban roast pork                                                                         0.788992   \n",
+              "roasted chestnut coffee                                                                  0.984565   \n",
+              "potato salad with green onion and mustard  rasp...                                       0.966313   \n",
+              "\n",
+              "                                                    cuban roast pork  \\\n",
+              "sour cream biscuits                                         0.932978   \n",
+              "whipped sweet potatoes and bananas with honey               0.788992   \n",
+              "cuban roast pork                                            0.000000   \n",
+              "roasted chestnut coffee                                     0.934648   \n",
+              "potato salad with green onion and mustard  rasp...          0.884326   \n",
+              "\n",
+              "                                                    roasted chestnut coffee  \\\n",
+              "sour cream biscuits                                                0.975303   \n",
+              "whipped sweet potatoes and bananas with honey                      0.984565   \n",
+              "cuban roast pork                                                   0.934648   \n",
+              "roasted chestnut coffee                                            0.000000   \n",
+              "potato salad with green onion and mustard  rasp...                 0.936329   \n",
+              "\n",
+              "                                                    potato salad with green onion and mustard  raspberry vinaigrett  \n",
+              "sour cream biscuits                                                                          0.929673                \n",
+              "whipped sweet potatoes and bananas with honey                                                0.966313                \n",
+              "cuban roast pork                                                                             0.884326                \n",
+              "roasted chestnut coffee                                                                      0.936329                \n",
+              "potato salad with green onion and mustard  rasp...                                           0.000000                "
+            ],
+            "text/html": [
+              "\n",
+              "  <div id=\"df-178392a8-cf5b-428e-b9fd-55f8e9a781e6\">\n",
+              "    <div class=\"colab-df-container\">\n",
+              "      <div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>sour cream biscuits</th>\n",
+              "      <th>whipped sweet potatoes and bananas with honey</th>\n",
+              "      <th>cuban roast pork</th>\n",
+              "      <th>roasted chestnut coffee</th>\n",
+              "      <th>potato salad with green onion and mustard  raspberry vinaigrett</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>sour cream biscuits</th>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.943274</td>\n",
+              "      <td>0.932978</td>\n",
+              "      <td>0.975303</td>\n",
+              "      <td>0.929673</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>whipped sweet potatoes and bananas with honey</th>\n",
+              "      <td>0.943274</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.788992</td>\n",
+              "      <td>0.984565</td>\n",
+              "      <td>0.966313</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>cuban roast pork</th>\n",
+              "      <td>0.932978</td>\n",
+              "      <td>0.788992</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.934648</td>\n",
+              "      <td>0.884326</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>roasted chestnut coffee</th>\n",
+              "      <td>0.975303</td>\n",
+              "      <td>0.984565</td>\n",
+              "      <td>0.934648</td>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>0.936329</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>potato salad with green onion and mustard  raspberry vinaigrett</th>\n",
+              "      <td>0.929673</td>\n",
+              "      <td>0.966313</td>\n",
+              "      <td>0.884326</td>\n",
+              "      <td>0.936329</td>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>\n",
+              "      <button class=\"colab-df-convert\" onclick=\"convertToInteractive('df-178392a8-cf5b-428e-b9fd-55f8e9a781e6')\"\n",
+              "              title=\"Convert this dataframe to an interactive table.\"\n",
+              "              style=\"display:none;\">\n",
+              "        \n",
+              "  <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\"viewBox=\"0 0 24 24\"\n",
+              "       width=\"24px\">\n",
+              "    <path d=\"M0 0h24v24H0V0z\" fill=\"none\"/>\n",
+              "    <path d=\"M18.56 5.44l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94zm-11 1L8.5 8.5l.94-2.06 2.06-.94-2.06-.94L8.5 2.5l-.94 2.06-2.06.94zm10 10l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94z\"/><path d=\"M17.41 7.96l-1.37-1.37c-.4-.4-.92-.59-1.43-.59-.52 0-1.04.2-1.43.59L10.3 9.45l-7.72 7.72c-.78.78-.78 2.05 0 2.83L4 21.41c.39.39.9.59 1.41.59.51 0 1.02-.2 1.41-.59l7.78-7.78 2.81-2.81c.8-.78.8-2.07 0-2.86zM5.41 20L4 18.59l7.72-7.72 1.47 1.35L5.41 20z\"/>\n",
+              "  </svg>\n",
+              "      </button>\n",
+              "      \n",
+              "  <style>\n",
+              "    .colab-df-container {\n",
+              "      display:flex;\n",
+              "      flex-wrap:wrap;\n",
+              "      gap: 12px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert {\n",
+              "      background-color: #E8F0FE;\n",
+              "      border: none;\n",
+              "      border-radius: 50%;\n",
+              "      cursor: pointer;\n",
+              "      display: none;\n",
+              "      fill: #1967D2;\n",
+              "      height: 32px;\n",
+              "      padding: 0 0 0 0;\n",
+              "      width: 32px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert:hover {\n",
+              "      background-color: #E2EBFA;\n",
+              "      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);\n",
+              "      fill: #174EA6;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert {\n",
+              "      background-color: #3B4455;\n",
+              "      fill: #D2E3FC;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert:hover {\n",
+              "      background-color: #434B5C;\n",
+              "      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);\n",
+              "      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));\n",
+              "      fill: #FFFFFF;\n",
+              "    }\n",
+              "  </style>\n",
+              "\n",
+              "      <script>\n",
+              "        const buttonEl =\n",
+              "          document.querySelector('#df-178392a8-cf5b-428e-b9fd-55f8e9a781e6 button.colab-df-convert');\n",
+              "        buttonEl.style.display =\n",
+              "          google.colab.kernel.accessAllowed ? 'block' : 'none';\n",
+              "\n",
+              "        async function convertToInteractive(key) {\n",
+              "          const element = document.querySelector('#df-178392a8-cf5b-428e-b9fd-55f8e9a781e6');\n",
+              "          const dataTable =\n",
+              "            await google.colab.kernel.invokeFunction('convertToInteractive',\n",
+              "                                                     [key], {});\n",
+              "          if (!dataTable) return;\n",
+              "\n",
+              "          const docLinkHtml = 'Like what you see? Visit the ' +\n",
+              "            '<a target=\"_blank\" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'\n",
+              "            + ' to learn more about interactive tables.';\n",
+              "          element.innerHTML = '';\n",
+              "          dataTable['output_type'] = 'display_data';\n",
+              "          await google.colab.output.renderOutput(dataTable, element);\n",
+              "          const docLink = document.createElement('div');\n",
+              "          docLink.innerHTML = docLinkHtml;\n",
+              "          element.appendChild(docLink);\n",
+              "        }\n",
+              "      </script>\n",
+              "    </div>\n",
+              "  </div>\n",
+              "  "
+            ]
+          },
+          "metadata": {},
+          "execution_count": 70
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Zwjl6g7-rcai"
+      },
+      "source": [
+        "3.3 Какие рецепты являются наиболее похожими? Прокомментируйте результат (словами)."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Чем дальше коэфф по столбцу/cтроке к единице, тем меньше схожесть текстов между собой (то есть 1 в марице=>тексты идентичные, 0-совершенно разные)"
+      ],
+      "metadata": {
+        "id": "MOO8va7xCtf6"
+      }
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3 (ipykernel)",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.9.12"
+    },
+    "colab": {
+      "provenance": []
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
